@@ -1,0 +1,19 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "taturou@gmail.com",
+    "longName": "LifeGameWatch",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "shortName": "LifeGameWatch",
+    "uuid": "7698839a-8bbd-4b94-b541-7e91a94eccf4",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
