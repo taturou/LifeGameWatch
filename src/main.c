@@ -1,5 +1,6 @@
 #include "pebble.h"
 #include "field.h"
+#include "menu.h"
 
 static Window *window;
 static Field *field;
@@ -32,7 +33,7 @@ static void select_single_click_handler(ClickRecognizerRef recognizer, void *con
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    field_clear(field);
+    menu_create();
 }
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -47,12 +48,8 @@ static void config_provider(void *context) {
     window_single_repeating_click_subscribe(BUTTON_ID_DOWN, 100, down_single_click_handler);
 }
 
-static void init() {
+static void window_load(Window *window) {
     timer = NULL;
-
-    window = window_create();
-    window_stack_push(window, true /* Animated */);
-    window_set_background_color(window, GColorBlack);
 
     Layer *window_layer = window_get_root_layer(window);
     field = field_create(layer_get_frame(window_layer));
@@ -62,8 +59,21 @@ static void init() {
     }
 }
 
-static void deinit() {
+static void window_unload(Window *window) {
     field_destroy(field);
+}
+
+static void init() {
+    window = window_create();
+    window_set_background_color(window, GColorBlack);
+    window_set_window_handlers(window, (WindowHandlers) {
+        .load = window_load,
+        .unload = window_unload,
+    });
+    window_stack_push(window, true /* Animated */);
+}
+
+static void deinit() {
     window_destroy(window);
 }
 
