@@ -11,15 +11,125 @@ typedef struct cells {
     uint8_t *tmp_data;
 } Cells;
 
+#define MAX_FONT    (10)
+#define FONT_ROW    (7)
+#define FONT_COLUMN (3)
+
+static uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
+    // 0
+    {
+        1,1,1,
+        1,0,1,
+        1,0,1,
+        1,0,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+    },
+    // 1
+    {
+        1,1,0,
+        0,1,0,
+        0,1,0,
+        0,1,0,
+        0,1,0,
+        0,1,0,
+        1,1,1,
+    },
+    // 2
+    {
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        1,1,1,
+        1,0,0,
+        1,0,0,
+        1,1,1,
+    },
+    // 3
+    {
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        1,1,1,
+    },
+    // 4
+    {
+        1,0,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        0,0,1,
+    },
+    // 5
+    {
+        1,1,1,
+        1,0,0,
+        1,0,0,
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        1,1,1,
+    },
+    // 6
+    {
+        1,1,1,
+        1,0,0,
+        1,0,0,
+        1,1,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+    },
+    // 7
+    {
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        0,1,0,
+        0,1,0,
+        0,1,0,
+        0,1,0,
+    },
+    // 8
+    {
+        1,1,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+    },
+    // 9
+    {
+        1,1,1,
+        1,0,1,
+        1,0,1,
+        1,1,1,
+        0,0,1,
+        0,0,1,
+        1,1,1,
+    }
+};
+
 #define ROUNDUP32BIT(n)    (((n) + 3) & ~3)
 
 inline static uint8_t s_cell_get(const uint8_t *data, CSize size, int row, int column);
 inline static void s_cell_set(uint8_t *data, CSize size, int row, int column, uint8_t life);
 inline static int s_cells_num_alive(const uint8_t *data, CSize size, int row, int col);
+static void s_cells_set_font(uint8_t *data, CSize size, int row, int col, int num);
+static void s_math_cut_figure2(int num, int figure[2]);
 
 #define CELL_GET(cells, sign, row, col)        s_cell_get((cells)->sign, (cells)->size, (row), (col))
 #define CELL_SET(cells, sign, row, col, life)  s_cell_set((cells)->sign, (cells)->size, (row), (col), (life))
 #define CELLS_NUM_ALIVE(cells, sign, row, col) s_cells_num_alive((cells)->sign, (cells)->size, (row), (col))
+#define CELLS_SET_FONT(cells, sign, row, col, num)    s_cells_set_font((cells)->sign, (cells)->size, (row), (col), (num))
 
 Cells *cells_create(CSize size) {
     Cells *cells = NULL;
@@ -53,11 +163,24 @@ bool cells_is_alive(const Cells *cells, uint16_t row, uint16_t column) {
 void cells_set_time(Cells *cells, time_t tim) {
     memset(cells->data, DEAD, cells->data_size);
 
+#if 0 // Glider
     CELL_SET(cells, data, 0, 1, ALIVE);
     CELL_SET(cells, data, 1, 2, ALIVE);
-    CELL_SET(cells, data, 2, 0, ALIVE);
+    CellsELL_SET(cells, data, 2, 0, ALIVE);
     CELL_SET(cells, data, 2, 1, ALIVE);
     CELL_SET(cells, data, 2, 2, ALIVE);
+#endif
+
+    struct tm *ltim = localtime(&tim);
+
+    int hour[2], min[2];
+    s_math_cut_figure2(ltim->tm_hour, hour);
+    s_math_cut_figure2(ltim->tm_min, min);
+
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*0)+0, hour[1]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*1)+0, hour[0]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*2)+1, min[1]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*3)+1, min[0]);
 }
 
 void cells_evolution(Cells *cells) {
@@ -110,4 +233,22 @@ inline static int s_cells_num_alive(const uint8_t *data, CSize size, int row, in
     }
     num -= s_cell_get(data, size, row, col);
     return num;
+}
+
+static void s_cells_set_font(uint8_t *data, CSize size, int row, int col, int num) {
+    if(MAX_FONT <= num) {
+        return;
+    }
+    uint8_t *font = s_font[num];
+
+    for (int r = 0; r < FONT_ROW; r++) {
+        for (int c = 0; c < FONT_COLUMN; c++) {
+            s_cell_set(data, size, row+r, col+c, font[(r * FONT_COLUMN) + c]);
+        }
+    }
+}
+
+static void s_math_cut_figure2(int num, int figure[2]) {
+    figure[0] = num % 10;
+    figure[1] = (num / 10) % 10;
 }
