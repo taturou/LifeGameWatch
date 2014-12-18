@@ -56,6 +56,11 @@ Layer *field_get_layer(const Field *field) {
     return field->layer;
 }
 
+void field_clear(Field *field) {
+    cells_clear(field->cells);
+    field_mark_dirty(field);
+}
+
 void field_set_time(Field *field, time_t tim) {
     cells_set_time(field->cells, tim);
     field_mark_dirty(field);

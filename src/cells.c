@@ -160,6 +160,10 @@ bool cells_is_alive(const Cells *cells, uint16_t row, uint16_t column) {
     return CELL_GET(cells, data, row, column) == ALIVE ? true : false;
 }
 
+void cells_clear(Cells *cells) {
+    memset(cells->data, DEAD, cells->data_size);
+}
+
 void cells_set_time(Cells *cells, time_t tim) {
     memset(cells->data, DEAD, cells->data_size);
 
