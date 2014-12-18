@@ -2,7 +2,16 @@
     
 #include <pebble.h>
 
+typedef enum pattern {
+    None,
+    Clock,
+    Glider,
+    LWSS
+} Pattern;
+    
 typedef struct menu Menu;
 
-Menu *menu_create(void);
+typedef void (*MenuSelectCallback)(Pattern pattern);
+
+Menu *menu_create(MenuSelectCallback callback);
 void menu_destroy(Menu *menu);

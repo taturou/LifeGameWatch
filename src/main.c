@@ -4,10 +4,30 @@
 
 static Window *window;
 static Field *field;
+static Pattern pattern;
 
 static AppTimer *timer;
 #define DELAY_AUTO_EVO    (200)
 #define DELAY_MENU        (500)
+
+static void menu_select_callback(Pattern ptn) {
+    pattern = ptn;
+
+    switch (pattern) {
+    case Clock:
+        field_set_time(field, time(NULL));
+        break;
+    case Glider:
+        field_clear(field);
+        break;
+    case LWSS:
+        field_clear(field);
+        break;
+    default:
+        field_clear(field);
+        break;
+    }
+}
 
 static void timer_cancel(void) {
     if (timer != NULL) {
@@ -28,12 +48,12 @@ static void up_single_click_handler(ClickRecognizerRef recognizer, void *context
 
 static void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    field_set_time(field, time(NULL));
+    menu_select_callback(pattern);
 }
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    menu_create();
+    menu_create(menu_select_callback);
 }
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -49,6 +69,7 @@ static void config_provider(void *context) {
 }
 
 static void window_load(Window *window) {
+    pattern = Clock;
     timer = NULL;
 
     Layer *window_layer = window_get_root_layer(window);
