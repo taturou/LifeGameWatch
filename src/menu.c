@@ -3,7 +3,7 @@
 
 #define NUM_MENU_SECTIONS 2
 #define NUM_FIRST_MENU_ITEMS 1
-#define NUM_SECOND_MENU_ITEMS 2
+#define NUM_SECOND_MENU_ITEMS 3
 
 typedef struct menu {
     Window *window;
@@ -110,7 +110,10 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
             menu_cell_title_draw(ctx, cell_layer, "Glider");
             break;
         case 1:
-            menu_cell_title_draw(ctx, cell_layer, "Lightweight spaceship ");
+            menu_cell_title_draw(ctx, cell_layer, "Spaceship");
+            break;
+        case 2:
+            menu_cell_title_draw(ctx, cell_layer, "R-pentomino");
             break;
         default:
             break;
@@ -120,13 +123,13 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
 
 static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     Menu *menu = (Menu*)data;
-    Pattern pattern = None;
+    CPattern pattern = CP_None;
 
     switch (cell_index->section) {
     case 0:
         switch (cell_index->row) {
         case 0:
-            pattern = Clock;
+            pattern = CP_Clock;
             break;
         default:
             break;
@@ -135,10 +138,13 @@ static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index,
     case 1:
         switch (cell_index->row) {
         case 0:
-            pattern = Glider;
+            pattern = CP_Glider;
             break;
         case 1:
-            pattern = LWSS;
+            pattern = CP_LWSaceship;
+            break;
+        case 2:
+            pattern = CP_RRntomino;
             break;
         default:
             break;

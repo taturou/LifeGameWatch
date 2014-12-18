@@ -15,7 +15,7 @@ typedef struct cells {
 #define FONT_ROW    (7)
 #define FONT_COLUMN (3)
 
-static uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
+static const uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
     // 0
     {
         1,1,1,
@@ -118,7 +118,39 @@ static uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
     }
 };
 
+static const CSize pattern_glider[] = {
+    {0, 1},
+    {1, 2},
+    {2, 0},
+    {2, 1},
+    {2, 2}
+};
+
+static const CSize pattern_lwspacesip[] = {
+    {4, 0},
+    {4, 3},
+    {5, 4},
+    {6, 0},
+    {6, 4},
+    {7, 1},
+    {7, 2},
+    {7, 3},
+    {7, 4}
+};
+
+static const CSize pattern_rpentomino[] = {
+    { 9, 10},
+    { 9, 11},
+    {10,  9},
+    {10, 10},
+    {11, 10}
+};
+
 #define ROUNDUP32BIT(n)    (((n) + 3) & ~3)
+
+static void s_cells_set_pattern_none(Cells *cells);
+static void s_cells_set_pattern_clock(Cells *cells);
+static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned int len);
 
 inline static uint8_t s_cell_get(const uint8_t *data, CSize size, int row, int column);
 inline static void s_cell_set(uint8_t *data, CSize size, int row, int column, uint8_t life);
@@ -160,31 +192,27 @@ bool cells_is_alive(const Cells *cells, uint16_t row, uint16_t column) {
     return CELL_GET(cells, data, row, column) == ALIVE ? true : false;
 }
 
-void cells_clear(Cells *cells) {
-    memset(cells->data, DEAD, cells->data_size);
-}
-
-void cells_set_time(Cells *cells, time_t tim) {
-    memset(cells->data, DEAD, cells->data_size);
-
-#if 0 // Glider
-    CELL_SET(cells, data, 0, 1, ALIVE);
-    CELL_SET(cells, data, 1, 2, ALIVE);
-    CellsELL_SET(cells, data, 2, 0, ALIVE);
-    CELL_SET(cells, data, 2, 1, ALIVE);
-    CELL_SET(cells, data, 2, 2, ALIVE);
-#endif
-
-    struct tm *ltim = localtime(&tim);
-
-    int hour[2], min[2];
-    s_math_cut_figure2(ltim->tm_hour, hour);
-    s_math_cut_figure2(ltim->tm_min, min);
-
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*0)+0, hour[1]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*1)+0, hour[0]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*2)+1, min[1]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*3)+1, min[0]);
+void cells_set_pattern(Cells *cells, CPattern pattern) {
+    switch (pattern) {
+    case CP_None:
+        s_cells_set_pattern_none(cells);
+        break;
+    case CP_Clock:
+        s_cells_set_pattern_clock(cells);
+        break;
+    case CP_Glider:
+        s_cells_set_pattern_common(cells, pattern_glider, sizeof(pattern_glider) / sizeof(CSize));
+        break;
+    case CP_LWSaceship:
+        s_cells_set_pattern_common(cells, pattern_lwspacesip, sizeof(pattern_lwspacesip) / sizeof(CSize));
+        break;
+    case CP_RRntomino:
+        s_cells_set_pattern_common(cells, pattern_rpentomino, sizeof(pattern_rpentomino) / sizeof(CSize));
+        break;
+    default:
+        s_cells_set_pattern_none(cells);
+        break;
+    }
 }
 
 void cells_evolution(Cells *cells) {
@@ -204,6 +232,34 @@ void cells_evolution(Cells *cells) {
                 }
             }
         }
+    }
+}
+
+static void s_cells_set_pattern_none(Cells *cells) {
+    memset(cells->data, DEAD, cells->data_size);
+}
+
+static void s_cells_set_pattern_clock(Cells *cells) {
+    memset(cells->data, DEAD, cells->data_size);
+
+    time_t tim = time(NULL);
+    struct tm *ltim = localtime(&tim);
+
+    int hour[2], min[2];
+    s_math_cut_figure2(ltim->tm_hour, hour);
+    s_math_cut_figure2(ltim->tm_min, min);
+
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*0)+0, hour[1]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*1)+0, hour[0]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*2)+1, min[1]);
+    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*3)+1, min[0]);
+}
+
+static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned int len) {
+    memset(cells->data, DEAD, cells->data_size);
+
+    for (unsigned int i = 0; i < len; i++) {
+        CELL_SET(cells, data, raw[i].row, raw[i].column, ALIVE);
     }
 }
 
@@ -243,7 +299,7 @@ static void s_cells_set_font(uint8_t *data, CSize size, int row, int col, int nu
     if(MAX_FONT <= num) {
         return;
     }
-    uint8_t *font = s_font[num];
+    const uint8_t *font = s_font[num];
 
     for (int r = 0; r < FONT_ROW; r++) {
         for (int c = 0; c < FONT_COLUMN; c++) {
