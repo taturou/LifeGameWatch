@@ -8,6 +8,7 @@
 typedef struct menu {
     Window *window;
     MenuLayer *layer;
+    GBitmap *icons[MAX_CPATTERN];
     MenuSelectCallback callback;
 } Menu;
 
@@ -25,6 +26,13 @@ Menu *menu_create(MenuSelectCallback callback) {
         if (window != NULL) {
             menu->window = window;
  
+            // create icons
+            menu->icons[CP_Clock] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_CLOCK);
+            menu->icons[CP_Glider] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_GLIDER);
+            menu->icons[CP_LWSaceship] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_LWSS);
+            menu->icons[CP_RRntomino] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_RPENT);
+
+            // init window
             window_set_background_color(window, GColorWhite);
             window_set_user_data(window, (void*)menu);
             window_set_window_handlers(window, (WindowHandlers) {
@@ -71,9 +79,11 @@ static uint16_t s_menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t sec
     return num;
 }
 
+#if 0
 static int16_t s_menu_get_cell_hight_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     return 35;
 }
+#endif
     
 static int16_t s_menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
     // This is a define provided in pebble.h that you may use for the default height
@@ -94,11 +104,13 @@ static void s_menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, 
 }
 
 static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+    Menu *menu = (Menu*)data;
+
     switch (cell_index->section) {
     case 0:
         switch (cell_index->row) {
         case 0:
-            menu_cell_title_draw(ctx, cell_layer, "Clock");
+            menu_cell_basic_draw(ctx, cell_layer, "Clock", "The present time", menu->icons[CP_Clock]);
             break;
         default:
             break;
@@ -107,13 +119,13 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
     case 1:
         switch (cell_index->row) {
         case 0:
-            menu_cell_title_draw(ctx, cell_layer, "Glider");
+            menu_cell_basic_draw(ctx, cell_layer, "Glider", "Most popular glider", menu->icons[CP_Glider]);
             break;
         case 1:
-            menu_cell_title_draw(ctx, cell_layer, "Spaceship");
+            menu_cell_basic_draw(ctx, cell_layer, "Spaceship", "Oscillators & translate themselves", menu->icons[CP_LWSaceship]);
             break;
         case 2:
-            menu_cell_title_draw(ctx, cell_layer, "R-pentomino");
+            menu_cell_basic_draw(ctx, cell_layer, "R-pentomino", "It failed to stabilize", menu->icons[CP_RRntomino]);
             break;
         default:
             break;
@@ -166,7 +178,7 @@ static void s_window_load(Window *window) {
     menu_layer_set_callbacks(menu->layer, (void*)menu, (MenuLayerCallbacks){
         .get_num_sections = s_menu_get_num_sections_callback,
         .get_num_rows = s_menu_get_num_rows_callback,
-        .get_cell_height = s_menu_get_cell_hight_callback,
+        // .get_cell_height = s_menu_get_cell_hight_callback,
         .get_header_height = s_menu_get_header_height_callback,
         .draw_header = s_menu_draw_header_callback,
         .draw_row = s_menu_draw_row_callback,

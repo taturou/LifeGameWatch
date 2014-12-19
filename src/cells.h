@@ -8,12 +8,14 @@ typedef struct cells_size {
 } CSize;
 
 typedef enum cells_pattern {
-    CP_None,        // clear
+    CP_None = 0,    // as clear
     CP_Clock,
     CP_Glider,
     CP_LWSaceship,  // Lightweight spaceship
-    CP_RRntomino,   // R-pentomino
+    CP_RRntomino    // R-pentomino
+    // You have to modify 'MAX_CPATTERN' value.
 } CPattern;
+#define MAX_CPATTERN    ((int)CP_RRntomino + 1)
 
 typedef struct cells Cells;
 
