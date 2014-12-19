@@ -249,10 +249,14 @@ static void s_cells_set_pattern_clock(Cells *cells) {
     s_math_cut_figure2(ltim->tm_hour, hour);
     s_math_cut_figure2(ltim->tm_min, min);
 
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*0)+0, hour[1]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*1)+0, hour[0]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*2)+1, min[1]);
-    CELLS_SET_FONT(cells, data, 5, ((FONT_COLUMN+1)*3)+1, min[0]);
+    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*0)+3, hour[1]);
+    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*1)+3, hour[0]);
+    
+    CELL_SET(cells, data, 10,((FONT_COLUMN+1)*2)+3, ALIVE);
+    CELL_SET(cells, data, 12,((FONT_COLUMN+1)*2)+3, ALIVE);
+    
+    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*2)+5, min[1]);
+    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*3)+5, min[0]);
 }
 
 static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned int len) {

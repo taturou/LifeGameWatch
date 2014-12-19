@@ -2,7 +2,7 @@
 #include "field.h"
 #include "cells.h"
 
-#define CELL_SIZE   (8)  // width is same as height
+#define CELL_SIZE   (6)  // width is same as height
 
 typedef struct field {
     Layer *layer;
