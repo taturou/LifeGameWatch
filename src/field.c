@@ -69,12 +69,14 @@ void field_evolution(Field *field) {
 static void s_draw_grid(GContext *ctx, Field *field) {
     CSize size = cells_get_size(field->cells);
 
-    for (int row = 0; row <= size.row; row++) {
-        graphics_draw_line(ctx, (GPoint){0, row * CELL_SIZE}, (GPoint){size.column * CELL_SIZE, row * CELL_SIZE});
+    if (3 <= CELL_SIZE) {
+        for (int row = 0; row <= size.row; row++) {
+            graphics_draw_line(ctx, (GPoint){0, row * CELL_SIZE}, (GPoint){size.column * CELL_SIZE, row * CELL_SIZE});
+        }
+        for (int col = 0; col <= size.column; col++) {
+            graphics_draw_line(ctx, (GPoint){col * CELL_SIZE, 0}, (GPoint){col * CELL_SIZE, size.row * CELL_SIZE});
+        }   
     }
-    for (int col = 0; col <= size.column; col++) {
-        graphics_draw_line(ctx, (GPoint){col * CELL_SIZE, 0}, (GPoint){col * CELL_SIZE, size.row * CELL_SIZE});
-    }   
 }
 
 static void s_draw_cells(GContext *ctx, Field *field) {
