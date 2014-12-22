@@ -9,13 +9,15 @@ typedef struct menu {
     Window *window;
     MenuLayer *layer;
     GBitmap *icons[MAX_CPATTERN];
+    MenuIndex selected_index;
     MenuSelectCallback callback;
 } Menu;
 
 static void s_window_load(Window *window);
 static void s_window_unload(Window *window);
+static MenuIndex s_menu_get_index_from_pattern(CPattern pattern);
 
-Menu *menu_create(MenuSelectCallback callback) {
+Menu *menu_create(CPattern now_pattern, MenuSelectCallback callback) {
     Menu *menu = NULL;
 
     menu = calloc(1, sizeof(Menu));
@@ -26,6 +28,9 @@ Menu *menu_create(MenuSelectCallback callback) {
         if (window != NULL) {
             menu->window = window;
  
+            // calc index
+            menu->selected_index = s_menu_get_index_from_pattern(now_pattern);
+            
             // create icons
             menu->icons[CP_Clock] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_CLOCK);
             menu->icons[CP_Glider] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_GLIDER);
@@ -150,9 +155,21 @@ static void s_window_load(Window *window) {
         .select_click = s_menu_select_callback,
     });
     menu_layer_set_click_config_onto_window(menu->layer, window);
+    menu_layer_set_selected_index(menu->layer, menu->selected_index, MenuRowAlignCenter, false);
     layer_add_child(window_layer, menu_layer_get_layer(menu->layer));
 }
 
 static void s_window_unload(Window *window) {
     // do nothing
+}
+
+static MenuIndex s_menu_get_index_from_pattern(CPattern pattern) {
+    MenuIndex indexs[MAX_CPATTERN] = {
+        (MenuIndex){0, 0},
+        (MenuIndex){0, 0},
+        (MenuIndex){1, 0},
+        (MenuIndex){1, 1},
+        (MenuIndex){1, 2}
+    };
+    return indexs[(int)pattern];
 }
