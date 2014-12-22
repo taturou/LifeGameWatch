@@ -24,4 +24,4 @@ void cells_destroy(Cells *cells);
 CSize cells_get_size(const Cells *cells);
 bool cells_is_alive(const Cells *cells, uint16_t row, uint16_t column);
 void cells_set_pattern(Cells *cells, CPattern pattern);
-void cells_evolution(Cells *cells);
+bool cells_evolution(Cells *cells);

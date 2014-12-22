@@ -7,6 +7,7 @@ static Field *field;
 static CPattern pattern;
 
 static AppTimer *timer;
+#define DELAY_MANUAL_EVO  (100)
 #define DELAY_AUTO_EVO    (200)
 #define DELAY_MENU        (500)
 
@@ -23,8 +24,12 @@ static void timer_cancel(void) {
 }
 
 static void timer_callback(void *data) {
-    field_evolution(field);
-    timer = app_timer_register(DELAY_AUTO_EVO, timer_callback, NULL);
+    if (field_evolution(field) == true) {
+        timer = app_timer_register(DELAY_AUTO_EVO, timer_callback, NULL);
+    } else {
+        field_set_pattern(field, pattern);
+        timer = app_timer_register(2000, timer_callback, NULL);
+    }
 }
 
 static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -51,7 +56,7 @@ static void config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_UP, up_single_click_handler);
     window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
     window_long_click_subscribe(BUTTON_ID_SELECT, DELAY_MENU, select_long_click_handler, NULL);
-    window_single_repeating_click_subscribe(BUTTON_ID_DOWN, 100, down_single_click_handler);
+    window_single_repeating_click_subscribe(BUTTON_ID_DOWN, DELAY_MANUAL_EVO, down_single_click_handler);
 }
 
 static void window_load(Window *window) {

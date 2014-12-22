@@ -61,9 +61,11 @@ void field_set_pattern(Field *field, CPattern pattern) {
     field_mark_dirty(field);
 }
 
-void field_evolution(Field *field) {
-    cells_evolution(field->cells);
+bool field_evolution(Field *field) {
+    int ret;
+    ret = cells_evolution(field->cells);
     field_mark_dirty(field);
+    return ret;
 }
 
 static void s_draw_grid(GContext *ctx, Field *field) {
