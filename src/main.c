@@ -5,41 +5,93 @@
 static Window *window;
 static Field *field;
 static CPattern pattern;
+static uint16_t generation;
+static bool is_evolution;
 
 static AppTimer *timer;
-#define DELAY_MANUAL_EVO  (100)
-#define DELAY_AUTO_EVO    (200)
-#define DELAY_MENU        (500)
 
-static void menu_select_callback(CPattern _pattern) {
-    pattern = _pattern;
-    field_set_pattern(field, pattern);
-}
+#define DELAY_MANUAL_EVO                (100)
+#define DELAY_AUTO_EVO_START_BY_MENU    (1000)
+#define DELAY_AUTO_EVO_START_BY_UP      (0)
+#define DELAY_AUTO_EVO_CLOCK            (1000)
+#define DELAY_AUTO_EVO_OTHER            (200)
+#define DELAY_AUTO_EVO_STOP             (1000)
+#define DELAY_MENU                      (500)
+
+static void field_init(CPattern _pattern);
+static void menu_select_callback(CPattern _pattern);
 
 static void timer_cancel(void) {
     if (timer != NULL) {
         app_timer_cancel(timer);
         timer = NULL;
     }
+    tick_timer_service_unsubscribe();
 }
 
 static void timer_callback(void *data) {
-    if (field_evolution(field) == true) {
-        timer = app_timer_register(DELAY_AUTO_EVO, timer_callback, NULL);
+    is_evolution = field_evolution(field);
+    if (is_evolution == true) {
+        timer = app_timer_register(DELAY_AUTO_EVO_OTHER, timer_callback, NULL);
     } else {
-        field_set_pattern(field, pattern);
-        timer = app_timer_register(2000, timer_callback, NULL);
+        psleep(DELAY_AUTO_EVO_STOP);
+        menu_select_callback(pattern);
+    }
+    generation++;
+}
+
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+    if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
+        field_init(CP_Clock);
+    } else {
+        switch (generation) {
+        case 0: // fall down
+        case 2:
+            field_set_pattern(field, CP_None);
+            break;
+        case 1: // fall down
+        case 3:
+            field_set_pattern(field, CP_Clock);
+            break;
+        default:
+            is_evolution = field_evolution(field);
+            if (is_evolution == false) {
+                field_init(CP_Clock);
+            }
+            break;
+        }
+        generation++;
+    }
+}
+
+static void field_init(CPattern _pattern) {
+    pattern = _pattern;
+    generation = 0;
+    is_evolution = true;
+    field_set_pattern(field, pattern);
+}
+
+static void menu_select_callback(CPattern _pattern) {
+    field_init(_pattern);
+    if (pattern == CP_Clock) {
+        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
+    } else {
+        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_MENU, timer_callback, NULL);
     }
 }
 
 static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    timer = app_timer_register(DELAY_AUTO_EVO, timer_callback, NULL);
+    if (pattern == CP_Clock) {
+        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
+    } else {
+        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_UP, timer_callback, NULL);
+    }
 }
 
 static void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    menu_select_callback(pattern);
+    field_init(pattern);
 }
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -49,7 +101,9 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    field_evolution(field);
+    if (is_evolution == true) {
+        is_evolution = field_evolution(field);
+    }
 }
 
 static void config_provider(void *context) {
