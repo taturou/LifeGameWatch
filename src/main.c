@@ -18,10 +18,10 @@ static AppTimer *timer;
 #define DELAY_AUTO_EVO_STOP             (1000)
 #define DELAY_MENU                      (500)
 
-static void field_init(CPattern _pattern);
-static void menu_select_callback(CPattern _pattern);
+static void s_field_init(CPattern _pattern);
+static void s_menu_select_callback(CPattern _pattern);
 
-static void timer_cancel(void) {
+static void s_timer_cancel(void) {
     if (timer != NULL) {
         app_timer_cancel(timer);
         timer = NULL;
@@ -29,20 +29,20 @@ static void timer_cancel(void) {
     tick_timer_service_unsubscribe();
 }
 
-static void timer_callback(void *data) {
+static void s_timer_callback(void *data) {
     is_evolution = field_evolution(field);
     if (is_evolution == true) {
-        timer = app_timer_register(DELAY_AUTO_EVO_OTHER, timer_callback, NULL);
+        timer = app_timer_register(DELAY_AUTO_EVO_OTHER, s_timer_callback, NULL);
     } else {
         psleep(DELAY_AUTO_EVO_STOP);
-        menu_select_callback(pattern);
+        s_menu_select_callback(pattern);
     }
     generation++;
 }
 
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+static void s_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
-        field_init(CP_Clock);
+        s_field_init(CP_Clock);
     } else {
         switch (generation) {
         case 0: // fall down
@@ -56,7 +56,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         default:
             is_evolution = field_evolution(field);
             if (is_evolution == false) {
-                field_init(CP_Clock);
+                s_field_init(CP_Clock);
             }
             break;
         }
@@ -64,56 +64,59 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
 }
 
-static void field_init(CPattern _pattern) {
+static void s_field_init(CPattern _pattern) {
     pattern = _pattern;
     generation = 0;
     is_evolution = true;
     field_set_pattern(field, pattern);
 }
 
-static void menu_select_callback(CPattern _pattern) {
-    field_init(_pattern);
+static void s_menu_select_callback(CPattern _pattern) {
+    (void)field_reset_cell_size(field, (rand() % 6) + 2);
+    field_draw_grid(field, rand() % 2);
+    
+    s_field_init(_pattern);
     if (pattern == CP_Clock) {
-        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
+        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, s_tick_handler);
     } else {
-        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_MENU, timer_callback, NULL);
+        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_MENU, s_timer_callback, NULL);
     }
 }
 
-static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    timer_cancel();
+static void s_up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+    s_timer_cancel();
     if (pattern == CP_Clock) {
-        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
+        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, s_tick_handler);
     } else {
-        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_UP, timer_callback, NULL);
+        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_UP, s_timer_callback, NULL);
     }
 }
 
-static void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    timer_cancel();
-    field_init(pattern);
+static void s_select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+    s_timer_cancel();
+    s_field_init(pattern);
 }
 
-static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-    timer_cancel();
-    (void)menu_create(pattern, menu_select_callback);
+static void s_select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+    s_timer_cancel();
+    (void)menu_create(pattern, s_menu_select_callback);
 }
 
-static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    timer_cancel();
+static void s_down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+    s_timer_cancel();
     if (is_evolution == true) {
         is_evolution = field_evolution(field);
     }
 }
 
 static void config_provider(void *context) {
-    window_single_click_subscribe(BUTTON_ID_UP, up_single_click_handler);
-    window_single_click_subscribe(BUTTON_ID_SELECT, select_single_click_handler);
-    window_long_click_subscribe(BUTTON_ID_SELECT, DELAY_MENU, select_long_click_handler, NULL);
-    window_single_repeating_click_subscribe(BUTTON_ID_DOWN, DELAY_MANUAL_EVO, down_single_click_handler);
+    window_single_click_subscribe(BUTTON_ID_UP, s_up_single_click_handler);
+    window_single_click_subscribe(BUTTON_ID_SELECT, s_select_single_click_handler);
+    window_long_click_subscribe(BUTTON_ID_SELECT, DELAY_MENU, s_select_long_click_handler, NULL);
+    window_single_repeating_click_subscribe(BUTTON_ID_DOWN, DELAY_MANUAL_EVO, s_down_single_click_handler);
 }
 
-static void window_load(Window *window) {
+static void s_window_load(Window *window) {
     pattern = CP_Clock;
     timer = NULL;
 
@@ -125,26 +128,26 @@ static void window_load(Window *window) {
     }
 }
 
-static void window_unload(Window *window) {
+static void s_window_unload(Window *window) {
     field_destroy(field);
 }
 
-static void init() {
+static void s_init() {
     window = window_create();
     window_set_background_color(window, GColorBlack);
     window_set_window_handlers(window, (WindowHandlers) {
-        .load = window_load,
-        .unload = window_unload,
+        .load = s_window_load,
+        .unload = s_window_unload,
     });
     window_stack_push(window, true /* Animated */);
 }
 
-static void deinit() {
+static void s_deinit() {
     window_destroy(window);
 }
 
 int main(void) {
-    init();
+    s_init();
     app_event_loop();
-    deinit();
+    s_deinit();
 }

@@ -60,6 +60,11 @@ void menu_destroy(Menu *menu) {
     if (menu->window != NULL) {
         window_stack_pop(true);
         window_destroy(menu->window);
+
+        gbitmap_destroy(menu->icons[CP_Clock]);
+        gbitmap_destroy(menu->icons[CP_Glider]);
+        gbitmap_destroy(menu->icons[CP_LWSaceship]);
+        gbitmap_destroy(menu->icons[CP_RRntomino]);
     }
     free(menu);
 }
@@ -77,12 +82,6 @@ static uint16_t s_menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t sec
     return num_rows[section_index];
 }
 
-#if 0
-static int16_t s_menu_get_cell_hight_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-    return 35;
-}
-#endif
-    
 static int16_t s_menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
     // This is a define provided in pebble.h that you may use for the default height
     return MENU_CELL_BASIC_HEADER_HEIGHT;
@@ -148,7 +147,6 @@ static void s_window_load(Window *window) {
     menu_layer_set_callbacks(menu->layer, (void*)menu, (MenuLayerCallbacks){
         .get_num_sections = s_menu_get_num_sections_callback,
         .get_num_rows = s_menu_get_num_rows_callback,
-        // .get_cell_height = s_menu_get_cell_hight_callback,
         .get_header_height = s_menu_get_header_height_callback,
         .draw_header = s_menu_draw_header_callback,
         .draw_row = s_menu_draw_row_callback,
@@ -160,7 +158,9 @@ static void s_window_load(Window *window) {
 }
 
 static void s_window_unload(Window *window) {
-    // do nothing
+    Menu *menu = window_get_user_data(window);
+
+    menu_layer_destroy(menu->layer);
 }
 
 static MenuIndex s_menu_get_index_from_pattern(CPattern pattern) {
