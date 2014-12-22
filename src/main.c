@@ -39,7 +39,7 @@ static void select_single_click_handler(ClickRecognizerRef recognizer, void *con
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_cancel();
-    menu_create(menu_select_callback);
+    (void)menu_create(menu_select_callback);
 }
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {

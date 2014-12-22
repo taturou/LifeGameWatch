@@ -64,19 +64,12 @@ static uint16_t s_menu_get_num_sections_callback(MenuLayer *menu_layer, void *da
 }
 
 static uint16_t s_menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
-    uint16_t num = 0;
+    const uint16_t num_rows[NUM_MENU_SECTIONS] = {
+        NUM_FIRST_MENU_ITEMS,
+        NUM_SECOND_MENU_ITEMS
+    };
 
-    switch (section_index) {
-    case 0:
-        num = NUM_FIRST_MENU_ITEMS;
-        break;
-    case 1:
-        num = NUM_SECOND_MENU_ITEMS;
-        break;
-    default:
-        break;
-    }
-    return num;
+    return num_rows[section_index];
 }
 
 #if 0
@@ -91,80 +84,52 @@ static int16_t s_menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t
 }
 
 static void s_menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-    switch (section_index) {
-    case 0:
-        menu_cell_basic_header_draw(ctx, cell_layer, "Special pattern");
-        break;
-    case 1:
-        menu_cell_basic_header_draw(ctx, cell_layer, "Popular pattern");
-        break;
-    default:
-        break;
-    }
+    const char *titles[NUM_MENU_SECTIONS] = {
+        "Special pattern",
+        "Popular pattern"
+    };
+    menu_cell_basic_header_draw(ctx, cell_layer, titles[section_index]);
 }
 
 static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
     Menu *menu = (Menu*)data;
-
-    switch (cell_index->section) {
-    case 0:
-        switch (cell_index->row) {
-        case 0:
-            menu_cell_basic_draw(ctx, cell_layer, "Clock", "The present time", menu->icons[CP_Clock]);
-            break;
-        default:
-            break;
-        }
-        break;
-    case 1:
-        switch (cell_index->row) {
-        case 0:
-            menu_cell_basic_draw(ctx, cell_layer, "Glider", "Most popular glider", menu->icons[CP_Glider]);
-            break;
-        case 1:
-            menu_cell_basic_draw(ctx, cell_layer, "Spaceship", "Oscillators & translate themselves", menu->icons[CP_LWSaceship]);
-            break;
-        case 2:
-            menu_cell_basic_draw(ctx, cell_layer, "R-pentomino", "It failed to stabilize", menu->icons[CP_RRntomino]);
-            break;
-        default:
-            break;
-        }
-    }
+    struct basic_cell {
+        char *title;
+        char *sub_title;
+        GBitmap *icon;
+    };
+    const struct basic_cell cells1[NUM_FIRST_MENU_ITEMS] = {
+        {"Clock", "The present time", menu->icons[CP_Clock]}
+    };
+    const struct basic_cell cells2[NUM_SECOND_MENU_ITEMS] = {
+        {"Glider", "Most popular glider", menu->icons[CP_Glider]},
+        {"Spaceship", "Lightweight spaceship", menu->icons[CP_LWSaceship]},
+        {"R-pentomino", "Not stabilize", menu->icons[CP_RRntomino]}
+    };
+    const struct basic_cell *cells[NUM_MENU_SECTIONS] = {
+        cells1,
+        cells2
+    };
+    const struct basic_cell *cell = &cells[cell_index->section][cell_index->row];
+    menu_cell_basic_draw(ctx, cell_layer, cell->title, cell->sub_title, cell->icon);
 }
 
 static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     Menu *menu = (Menu*)data;
-    CPattern pattern = CP_None;
+    const CPattern patterns1[NUM_FIRST_MENU_ITEMS] = {
+        CP_Clock
+    };        
+    const CPattern patterns2[NUM_SECOND_MENU_ITEMS] = {
+        CP_Glider,
+        CP_LWSaceship,
+        CP_RRntomino 
+    };        
+    const CPattern *patterns[NUM_MENU_SECTIONS] = {
+        patterns1,
+        patterns2
+    };
+    const CPattern pattern = patterns[cell_index->section][cell_index->row];
 
-    switch (cell_index->section) {
-    case 0:
-        switch (cell_index->row) {
-        case 0:
-            pattern = CP_Clock;
-            break;
-        default:
-            break;
-        }
-        break;
-    case 1:
-        switch (cell_index->row) {
-        case 0:
-            pattern = CP_Glider;
-            break;
-        case 1:
-            pattern = CP_LWSaceship;
-            break;
-        case 2:
-            pattern = CP_RRntomino;
-            break;
-        default:
-            break;
-        }
-        break;
-    default:
-        break;
-    }
     (*menu->callback)(pattern);
     menu_destroy(menu);
 }
