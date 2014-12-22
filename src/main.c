@@ -48,19 +48,22 @@ static void s_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         case 0: // fall down
         case 2:
             field_set_pattern(field, CP_None);
+            is_evolution = true;
             break;
         case 1: // fall down
         case 3:
             field_set_pattern(field, CP_Clock);
+            is_evolution = true;
             break;
         default:
             is_evolution = field_evolution(field);
-            if (is_evolution == false) {
-                s_field_init(CP_Clock);
-            }
             break;
         }
-        generation++;
+        if (is_evolution == true) {
+            generation++;
+        } else {
+            s_field_init(CP_Clock);
+        }
     }
 }
 
