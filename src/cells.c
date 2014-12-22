@@ -119,23 +119,23 @@ static const uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
 };
 
 static const CSize pattern_glider[] = {
-    {0, 1},
     {1, 2},
-    {2, 0},
-    {2, 1},
-    {2, 2}
+    {2, 3},
+    {3, 1},
+    {3, 2},
+    {3, 3}
 };
 
 static const CSize pattern_lwspacesip[] = {
-    {4, 0},
-    {4, 3},
-    {5, 4},
-    {6, 0},
-    {6, 4},
-    {7, 1},
+    {4, 1},
+    {4, 4},
+    {5, 5},
+    {6, 1},
+    {6, 5},
     {7, 2},
     {7, 3},
-    {7, 4}
+    {7, 4},
+    {7, 5}
 };
 
 static const CSize pattern_rpentomino[] = {
@@ -267,24 +267,30 @@ static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned 
     }
 }
 
-inline static uint8_t s_cell_get(const uint8_t *data, CSize size, int row, int column) {
-    if ((row < 0)
-        || (column < 0)
-        || (size.row <= row)
-        || (size.column <= column)) {
-        return DEAD;
+inline static int s_cell_calc_data_index(CSize *size, int row, int column) {
+    if (row < 0) {
+        row = size->row + row;
+    } else if (size->row <= row) {
+        row = row - size->row;
+    } else {
+        // do nothing
     }
-    return data[(row * size.column) + column];
+    if (column < 0) {
+        column = size->column + column;
+    } else if (size->column <= column) {
+        column = column - size->column;
+    } else {
+        // do nothing
+    }
+    return (row * size->column) + column;
+}
+
+inline static uint8_t s_cell_get(const uint8_t *data, CSize size, int row, int column) {
+    return data[s_cell_calc_data_index(&size, row, column)];
 }
 
 inline static void s_cell_set(uint8_t *data, CSize size, int row, int column, uint8_t life){
-    if ((row < 0)
-        || (column < 0)
-        || (size.row <= row)
-        || (size.column <= column)) {
-        return;
-    }
-    data[(row * size.column) + column] = life;
+    data[s_cell_calc_data_index(&size, row, column)] = life;
 }
 
 inline static int s_cells_num_alive(const uint8_t *data, CSize size, int row, int col) {

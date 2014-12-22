@@ -20,8 +20,8 @@ Field *field_create(GRect window_frame) {
         GRect frame;
         frame.origin.x = CELL_SIZE - 1;
         frame.origin.y = CELL_SIZE - 1;
-        frame.size.w = window_frame.size.w - ((CELL_SIZE * 2) - 1);
-        frame.size.h = window_frame.size.h - ((CELL_SIZE * 2) - 1);
+        frame.size.w = window_frame.size.w - ((CELL_SIZE * 2) - 1) + (CELL_SIZE & 0x1);
+        frame.size.h = window_frame.size.h - ((CELL_SIZE * 2) - 1) + (CELL_SIZE & 0x1);
 
         layer_set_frame(layer, frame);
         layer_set_update_proc(layer, s_layer_update_callback);
