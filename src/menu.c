@@ -1,14 +1,16 @@
 #include <pebble.h>
 #include "menu.h"
 
-#define NUM_MENU_SECTIONS 2
-#define NUM_FIRST_MENU_ITEMS 1
-#define NUM_SECOND_MENU_ITEMS 3
+#define NUM_MENU_SECTIONS       (3)
+#define NUM_MENU_SECTION1_ROWS  (1)
+#define NUM_MENU_SECTION2_ROWS  (3)
+#define NUM_MENU_SECTION3_ROWS  (1)
 
 typedef struct menu {
     Window *window;
     MenuLayer *layer;
-    GBitmap *icons[MAX_CPATTERN];
+    GBitmap *pattern_icons[MAX_CPATTERN];
+    GBitmap *setting_icon;
     MenuIndex selected_index;
     MenuSelectCallback callback;
 } Menu;
@@ -32,10 +34,11 @@ Menu *menu_create(CPattern now_pattern, MenuSelectCallback callback) {
             menu->selected_index = s_menu_get_index_from_pattern(now_pattern);
             
             // create icons
-            menu->icons[CP_Clock] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_CLOCK);
-            menu->icons[CP_Glider] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_GLIDER);
-            menu->icons[CP_LWSaceship] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_LWSS);
-            menu->icons[CP_RRntomino] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_RPENT);
+            menu->pattern_icons[CP_Clock] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_CLOCK);
+            menu->pattern_icons[CP_Glider] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_GLIDER);
+            menu->pattern_icons[CP_LWSaceship] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_LWSS);
+            menu->pattern_icons[CP_RRntomino] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_RPENT);
+            menu->setting_icon = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_SETTING);
 
             // init window
             window_set_background_color(window, GColorWhite);
@@ -61,10 +64,11 @@ void menu_destroy(Menu *menu) {
         window_stack_pop(true);
         window_destroy(menu->window);
 
-        gbitmap_destroy(menu->icons[CP_Clock]);
-        gbitmap_destroy(menu->icons[CP_Glider]);
-        gbitmap_destroy(menu->icons[CP_LWSaceship]);
-        gbitmap_destroy(menu->icons[CP_RRntomino]);
+        gbitmap_destroy(menu->pattern_icons[CP_Clock]);
+        gbitmap_destroy(menu->pattern_icons[CP_Glider]);
+        gbitmap_destroy(menu->pattern_icons[CP_LWSaceship]);
+        gbitmap_destroy(menu->pattern_icons[CP_RRntomino]);
+        gbitmap_destroy(menu->setting_icon);
     }
     free(menu);
 }
@@ -75,10 +79,10 @@ static uint16_t s_menu_get_num_sections_callback(MenuLayer *menu_layer, void *da
 
 static uint16_t s_menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
     const uint16_t num_rows[NUM_MENU_SECTIONS] = {
-        NUM_FIRST_MENU_ITEMS,
-        NUM_SECOND_MENU_ITEMS
+        NUM_MENU_SECTION1_ROWS,
+        NUM_MENU_SECTION2_ROWS,
+        NUM_MENU_SECTION3_ROWS
     };
-
     return num_rows[section_index];
 }
 
@@ -90,7 +94,8 @@ static int16_t s_menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t
 static void s_menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
     const char *titles[NUM_MENU_SECTIONS] = {
         "Special pattern",
-        "Popular pattern"
+        "Popular pattern",
+        "Other"
     };
     menu_cell_basic_header_draw(ctx, cell_layer, titles[section_index]);
 }
@@ -102,17 +107,21 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
         char *sub_title;
         GBitmap *icon;
     };
-    const struct basic_cell cells1[NUM_FIRST_MENU_ITEMS] = {
-        {"Clock", "The present time", menu->icons[CP_Clock]}
+    const struct basic_cell cells1[NUM_MENU_SECTION1_ROWS] = {
+        {"Clock", "The present time", menu->pattern_icons[CP_Clock]}
     };
-    const struct basic_cell cells2[NUM_SECOND_MENU_ITEMS] = {
-        {"Glider", "Most popular glider", menu->icons[CP_Glider]},
-        {"Spaceship", "Lightweight spaceship", menu->icons[CP_LWSaceship]},
-        {"R-pentomino", "Not stabilize", menu->icons[CP_RRntomino]}
+    const struct basic_cell cells2[NUM_MENU_SECTION2_ROWS] = {
+        {"Glider", "Most popular glider", menu->pattern_icons[CP_Glider]},
+        {"Spaceship", "Lightweight spaceship", menu->pattern_icons[CP_LWSaceship]},
+        {"R-pentomino", "Not stabilize", menu->pattern_icons[CP_RRntomino]}
+    };
+    const struct basic_cell cells3[NUM_MENU_SECTION3_ROWS] = {
+        {"Settings", "for size, display", menu->setting_icon}
     };
     const struct basic_cell *cells[NUM_MENU_SECTIONS] = {
         cells1,
-        cells2
+        cells2,
+        cells3
     };
     const struct basic_cell *cell = &cells[cell_index->section][cell_index->row];
     menu_cell_basic_draw(ctx, cell_layer, cell->title, cell->sub_title, cell->icon);
@@ -120,22 +129,27 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
 
 static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     Menu *menu = (Menu*)data;
-    const CPattern patterns1[NUM_FIRST_MENU_ITEMS] = {
-        CP_Clock
-    };        
-    const CPattern patterns2[NUM_SECOND_MENU_ITEMS] = {
-        CP_Glider,
-        CP_LWSaceship,
-        CP_RRntomino 
-    };        
-    const CPattern *patterns[NUM_MENU_SECTIONS] = {
-        patterns1,
-        patterns2
-    };
-    const CPattern pattern = patterns[cell_index->section][cell_index->row];
-
-    (*menu->callback)(pattern);
-    menu_destroy(menu);
+    
+    if (cell_index->section != 2) {
+        const CPattern patterns1[NUM_MENU_SECTION1_ROWS] = {
+            CP_Clock
+        };        
+        const CPattern patterns2[NUM_MENU_SECTION2_ROWS] = {
+            CP_Glider,
+            CP_LWSaceship,
+            CP_RRntomino 
+        };
+        const CPattern *patterns[NUM_MENU_SECTIONS] = {
+            patterns1,
+            patterns2
+        };
+        const CPattern pattern = patterns[cell_index->section][cell_index->row];
+    
+        (*menu->callback)(pattern);
+        menu_destroy(menu);
+    } else { // cell_index->section == 2
+        
+    }
 }
 
 static void s_window_load(Window *window) {

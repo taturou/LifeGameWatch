@@ -9,6 +9,11 @@
     "resources": {
         "media": [
             {
+                "file": "images/menu_icon_setting.png",
+                "name": "MENU_ICON_SETTING",
+                "type": "png"
+            },
+            {
                 "file": "images/app_icon.png",
                 "menuIcon": true,
                 "name": "APP_ICON",
