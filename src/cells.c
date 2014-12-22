@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "cells.h"
+#include "font.h"
 
 #define ALIVE   (1)    // for Cells.data
 #define DEAD    (0)
@@ -11,157 +12,20 @@ typedef struct cells {
     uint8_t *tmp_data;
 } Cells;
 
-#define MAX_FONT    (10)
-#define FONT_ROW    (7)
-#define FONT_COLUMN (3)
-
-static const uint8_t s_font[MAX_FONT][FONT_ROW * FONT_COLUMN] = {
-    // 0
-    {
-        1,1,1,
-        1,0,1,
-        1,0,1,
-        1,0,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-    },
-    // 1
-    {
-        1,1,0,
-        0,1,0,
-        0,1,0,
-        0,1,0,
-        0,1,0,
-        0,1,0,
-        1,1,1,
-    },
-    // 2
-    {
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        1,1,1,
-        1,0,0,
-        1,0,0,
-        1,1,1,
-    },
-    // 3
-    {
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        1,1,1,
-    },
-    // 4
-    {
-        1,0,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        0,0,1,
-    },
-    // 5
-    {
-        1,1,1,
-        1,0,0,
-        1,0,0,
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        1,1,1,
-    },
-    // 6
-    {
-        1,1,1,
-        1,0,0,
-        1,0,0,
-        1,1,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-    },
-    // 7
-    {
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        0,1,0,
-        0,1,0,
-        0,1,0,
-        0,1,0,
-    },
-    // 8
-    {
-        1,1,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-    },
-    // 9
-    {
-        1,1,1,
-        1,0,1,
-        1,0,1,
-        1,1,1,
-        0,0,1,
-        0,0,1,
-        1,1,1,
-    }
-};
-
-static const CSize pattern_glider[] = {
-    {1, 2},
-    {2, 3},
-    {3, 1},
-    {3, 2},
-    {3, 3}
-};
-
-static const CSize pattern_lwspacesip[] = {
-    {4, 1},
-    {4, 4},
-    {5, 5},
-    {6, 1},
-    {6, 5},
-    {7, 2},
-    {7, 3},
-    {7, 4},
-    {7, 5}
-};
-
-static const CSize pattern_rpentomino[] = {
-    { 9, 10},
-    { 9, 11},
-    {10,  9},
-    {10, 10},
-    {11, 10}
-};
-
 #define ROUNDUP32BIT(n)    (((n) + 3) & ~3)
 
-static void s_cells_set_pattern_none(Cells *cells);
 static void s_cells_set_pattern_clock(Cells *cells);
-static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned int len);
 
 inline static uint8_t s_cell_get(const uint8_t *data, CSize size, int row, int column);
 inline static void s_cell_set(uint8_t *data, CSize size, int row, int column, uint8_t life);
 inline static int s_cells_num_alive(const uint8_t *data, CSize size, int row, int col);
-static void s_cells_set_font(uint8_t *data, CSize size, int row, int col, int num);
+static void s_cells_draw_font(uint8_t *data, CSize size, int offset_row, int offset_col, const CFont *font);
 static void s_math_cut_figure2(int num, int figure[2]);
 
 #define CELL_GET(cells, sign, row, col)        s_cell_get((cells)->sign, (cells)->size, (row), (col))
 #define CELL_SET(cells, sign, row, col, life)  s_cell_set((cells)->sign, (cells)->size, (row), (col), (life))
 #define CELLS_NUM_ALIVE(cells, sign, row, col) s_cells_num_alive((cells)->sign, (cells)->size, (row), (col))
-#define CELLS_SET_FONT(cells, sign, row, col, num)    s_cells_set_font((cells)->sign, (cells)->size, (row), (col), (num))
+#define CELLS_DRAW_FONT(cells, sign, row, col, font)    s_cells_draw_font((cells)->sign, (cells)->size, (row), (col), (font))
 
 Cells *cells_create(CSize size) {
     Cells *cells = NULL;
@@ -193,24 +57,24 @@ bool cells_is_alive(const Cells *cells, uint16_t row, uint16_t column) {
 }
 
 void cells_set_pattern(Cells *cells, CPattern pattern) {
+    memset(cells->data, DEAD, cells->data_size);
+
     switch (pattern) {
     case CP_None:
-        s_cells_set_pattern_none(cells);
         break;
     case CP_Clock:
         s_cells_set_pattern_clock(cells);
         break;
     case CP_Glider:
-        s_cells_set_pattern_common(cells, pattern_glider, sizeof(pattern_glider) / sizeof(CSize));
+         CELLS_DRAW_FONT(cells, data, 1, 1, &font_pattern_glider);
         break;
     case CP_LWSaceship:
-        s_cells_set_pattern_common(cells, pattern_lwspacesip, sizeof(pattern_lwspacesip) / sizeof(CSize));
+         CELLS_DRAW_FONT(cells, data, 3, 1, &font_pattern_lwspaceship);
         break;
     case CP_RRntomino:
-        s_cells_set_pattern_common(cells, pattern_rpentomino, sizeof(pattern_rpentomino) / sizeof(CSize));
+        CELLS_DRAW_FONT(cells, data, cells->size.row / 2, cells->size.column / 2, &font_pattern_pentomino);
         break;
     default:
-        s_cells_set_pattern_none(cells);
         break;
     }
 }
@@ -235,13 +99,7 @@ void cells_evolution(Cells *cells) {
     }
 }
 
-static void s_cells_set_pattern_none(Cells *cells) {
-    memset(cells->data, DEAD, cells->data_size);
-}
-
 static void s_cells_set_pattern_clock(Cells *cells) {
-    memset(cells->data, DEAD, cells->data_size);
-
     time_t tim = time(NULL);
     struct tm *ltim = localtime(&tim);
 
@@ -249,22 +107,31 @@ static void s_cells_set_pattern_clock(Cells *cells) {
     s_math_cut_figure2(ltim->tm_hour, hour);
     s_math_cut_figure2(ltim->tm_min, min);
 
-    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*0)+3, hour[1]);
-    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*1)+3, hour[0]);
-    
-    CELL_SET(cells, data, 10,((FONT_COLUMN+1)*2)+3, ALIVE);
-    CELL_SET(cells, data, 12,((FONT_COLUMN+1)*2)+3, ALIVE);
-    
-    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*2)+5, min[1]);
-    CELLS_SET_FONT(cells, data, 8, ((FONT_COLUMN+1)*3)+5, min[0]);
-}
+    CSize offset;
+    offset.row = (cells->size.row / 2) - (font_number[0].size.row / 2);
 
-static void s_cells_set_pattern_common(Cells *cells, const CSize *raw, unsigned int len) {
-    memset(cells->data, DEAD, cells->data_size);
+    // HH
+    offset.column = ((cells->size.column / 2) - 2) - font_number[hour[0]].size.column;
+    CELLS_DRAW_FONT(cells, data, offset.row, offset.column, &font_number[hour[0]]);
 
-    for (unsigned int i = 0; i < len; i++) {
-        CELL_SET(cells, data, raw[i].row, raw[i].column, ALIVE);
-    }
+    offset.column -= font_number[hour[0]].size.column + 1;
+    CELLS_DRAW_FONT(cells, data, offset.row, offset.column, &font_number[hour[1]]);
+
+    // MM
+    offset.column = ((cells->size.column / 2) + 2);
+    CELLS_DRAW_FONT(cells, data, offset.row, offset.column, &font_number[min[1]]);
+
+    offset.column += font_number[min[1]].size.column + 1;
+    CELLS_DRAW_FONT(cells, data, offset.row, offset.column, &font_number[min[0]]);
+
+    // :
+    offset.row = ((cells->size.row / 2) - (font_number[0].size.row / 2)) + 2;
+    offset.column = (cells->size.column / 2);
+    CELL_SET(cells, data, offset.row, offset.column, ALIVE);
+
+    offset.row = ((cells->size.row / 2) + (font_number[0].size.row / 2)) - 2;
+    offset.column = (cells->size.column / 2);
+    CELL_SET(cells, data, offset.row, offset.column, ALIVE);
 }
 
 inline static int s_cell_calc_data_index(CSize *size, int row, int column) {
@@ -305,15 +172,10 @@ inline static int s_cells_num_alive(const uint8_t *data, CSize size, int row, in
     return num;
 }
 
-static void s_cells_set_font(uint8_t *data, CSize size, int row, int col, int num) {
-    if(MAX_FONT <= num) {
-        return;
-    }
-    const uint8_t *font = s_font[num];
-
-    for (int r = 0; r < FONT_ROW; r++) {
-        for (int c = 0; c < FONT_COLUMN; c++) {
-            s_cell_set(data, size, row+r, col+c, font[(r * FONT_COLUMN) + c]);
+static void s_cells_draw_font(uint8_t *data, CSize size, int offset_row, int offset_col, const CFont *font) {
+    for (int r = 0; r < font->size.row; r++) {
+        for (int c = 0; c < font->size.column; c++) {
+            s_cell_set(data, size, r+offset_row, c+offset_col, font->data[(r * font->size.column) + c]);
         }
     }
 }
