@@ -128,6 +128,7 @@ static void s_window_load(Window *window) {
     if (field != NULL) {
         window_set_click_config_provider(window, config_provider);
         layer_add_child(window_layer, field_get_layer(field));
+        s_menu_select_callback(CP_Clock);
     }
 }
 
@@ -136,6 +137,8 @@ static void s_window_unload(Window *window) {
 }
 
 static void s_init() {
+    srand(time(NULL));
+    
     window = window_create();
     window_set_background_color(window, GColorBlack);
     window_set_window_handlers(window, (WindowHandlers) {
