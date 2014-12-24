@@ -9,6 +9,21 @@
     "resources": {
         "media": [
             {
+                "file": "images/action_bar_icon_return.png",
+                "name": "ACTION_BAR_ICON_RETURN",
+                "type": "png"
+            },
+            {
+                "file": "images/action_bar_icon_forward.png",
+                "name": "ACTION_BAR_ICON_FORWARD",
+                "type": "png"
+            },
+            {
+                "file": "images/action_bar_icon_start.png",
+                "name": "ACTION_BAR_ICON_START",
+                "type": "png"
+            },
+            {
                 "file": "images/menu_icon_setting.png",
                 "name": "MENU_ICON_SETTING",
                 "type": "png"

@@ -7,8 +7,14 @@ static Field *field;
 static CPattern pattern;
 static uint16_t generation;
 static bool is_evolution;
-
 static AppTimer *timer;
+
+typedef struct {
+    ActionBarLayer *layer;
+    AppTimer *timer;
+    GBitmap *icons[3];    // 0: Up, 1: Select, 2: Down
+} ActionBar;
+static ActionBar action_bar;
 
 #define DELAY_MANUAL_EVO                (100)
 #define DELAY_AUTO_EVO_START_BY_MENU    (1000)
@@ -17,9 +23,11 @@ static AppTimer *timer;
 #define DELAY_AUTO_EVO_OTHER            (200)
 #define DELAY_AUTO_EVO_STOP             (1000)
 #define DELAY_MENU                      (500)
+#define DELAY_ACTIONBAR_HIDE            (3000)
 
 static void s_field_init(CPattern _pattern);
 static void s_menu_select_callback(CPattern _pattern);
+static void s_config_provider(void *context);
 
 static void s_timer_cancel(void) {
     if (timer != NULL) {
@@ -86,6 +94,36 @@ static void s_menu_select_callback(CPattern _pattern) {
     }
 }
 
+static void s_action_bar_destroy(void) {
+    action_bar.timer = NULL;
+
+    if (action_bar.layer != NULL) {
+        action_bar_layer_remove_from_window(action_bar.layer);
+        action_bar_layer_destroy(action_bar.layer);
+        action_bar.layer = NULL;
+        window_set_click_config_provider(window, s_config_provider);
+    }
+}
+
+static void s_action_bar_timer_callback(void *data) {
+    s_action_bar_destroy();
+}
+
+static void s_action_bar_create(void) {
+    if (action_bar.layer == NULL) {
+        action_bar.layer = action_bar_layer_create();
+        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[0]);
+        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_SELECT, action_bar.icons[1]);
+        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_DOWN, action_bar.icons[2]);
+        action_bar_layer_set_background_color(action_bar.layer, GColorWhite);
+        action_bar_layer_add_to_window(action_bar.layer, window);
+        action_bar_layer_set_click_config_provider(action_bar.layer, s_config_provider);
+        action_bar.timer = app_timer_register(DELAY_ACTIONBAR_HIDE, s_action_bar_timer_callback, NULL);
+    } else {
+        app_timer_reschedule(action_bar.timer, DELAY_ACTIONBAR_HIDE);
+    }
+}
+
 static void s_up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     s_timer_cancel();
     if (pattern == CP_Clock) {
@@ -98,6 +136,7 @@ static void s_up_single_click_handler(ClickRecognizerRef recognizer, void *conte
 static void s_select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
     s_timer_cancel();
     s_field_init(pattern);
+    s_action_bar_create();
 }
 
 static void s_select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -112,7 +151,7 @@ static void s_down_single_click_handler(ClickRecognizerRef recognizer, void *con
     }
 }
 
-static void config_provider(void *context) {
+static void s_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_UP, s_up_single_click_handler);
     window_single_click_subscribe(BUTTON_ID_SELECT, s_select_single_click_handler);
     window_long_click_subscribe(BUTTON_ID_SELECT, DELAY_MENU, s_select_long_click_handler, NULL);
@@ -122,23 +161,36 @@ static void config_provider(void *context) {
 static void s_window_load(Window *window) {
     pattern = CP_Clock;
     timer = NULL;
-
+    srand(time(NULL));
+    
+    // for action bar
+    action_bar.layer = NULL;
+    action_bar.timer = NULL;
+    action_bar.icons[0] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_START);
+    action_bar.icons[1] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_RETURN);
+    action_bar.icons[2] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_FORWARD);
+    
+    // for field
     Layer *window_layer = window_get_root_layer(window);
     field = field_create(layer_get_frame(window_layer));
     if (field != NULL) {
-        window_set_click_config_provider(window, config_provider);
+        window_set_click_config_provider(window, s_config_provider);
         layer_add_child(window_layer, field_get_layer(field));
         s_menu_select_callback(CP_Clock);
     }
 }
 
 static void s_window_unload(Window *window) {
+    // for field
     field_destroy(field);
+    
+    // for action bar
+    gbitmap_destroy(action_bar.icons[0]);
+    gbitmap_destroy(action_bar.icons[1]);
+    gbitmap_destroy(action_bar.icons[2]);
 }
 
 static void s_init() {
-    srand(time(NULL));
-    
     window = window_create();
     window_set_background_color(window, GColorBlack);
     window_set_window_handlers(window, (WindowHandlers) {
