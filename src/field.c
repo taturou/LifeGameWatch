@@ -45,9 +45,37 @@ void field_destroy(Field *field) {
 
 bool field_reset(Field *field, FieldSettings *settings) {
     bool ret;
+    int cell_size;
+    bool is_draw_grid;
 
-    ret = s_setting_cell_size(field, settings->cell_size);
-    s_setting_is_draw_grid(field, settings->is_draw_grid);
+    switch (settings->cell_size) {
+    case CELL_SIZE_RANDOM:
+        cell_size = (rand() % (CELL_SIZE_MAX - CELL_SIZE_MIN)) + CELL_SIZE_MIN;
+        break;
+    default:
+        cell_size = (int)settings->cell_size;
+        break;
+    }
+
+    if (cell_size <= 3) {
+        is_draw_grid = false;
+    } else {
+        switch (settings->is_draw_grid) {
+        case DRAW_GRID_TRUE:
+            is_draw_grid = true;
+            break;
+        case DRAW_GRID_FALSE:
+            is_draw_grid = false;
+            break;
+        case DRAW_GRID_RANDOM: // fall down
+        default:
+            is_draw_grid = rand() % 2 == 0 ? true : false;
+            break;
+        }
+    }
+    
+    ret = s_setting_cell_size(field, cell_size);
+    s_setting_is_draw_grid(field, is_draw_grid);
     
     return ret;
 }

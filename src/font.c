@@ -126,6 +126,15 @@ const CFont font_pattern_glider = {
     {3, 3}, font_pattern_glider_data
 };
 
+const uint8_t font_pattern_glider2_data[3 * 3] = {
+    0,1,0,
+    1,0,0,
+    1,1,1
+};
+
+const CFont font_pattern_glider2 = {
+    {3, 3}, font_pattern_glider2_data
+};
 const uint8_t font_pattern_lwspaceship_data[4 * 5] = {
     1,0,0,1,0,
     0,0,0,0,1,

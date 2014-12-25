@@ -66,6 +66,13 @@ void cells_set_pattern(Cells *cells, CPattern pattern) {
         break;
     case CP_Glider:
          s_cells_draw_font(cells, DATA, 1, 1, &font_pattern_glider);
+        if ((font_pattern_glider.size.column * 4) <= cells->size.column) {
+            s_cells_draw_font(cells,
+                              DATA,
+                              rand() % 2 == 0 ? 1 : 2,
+                              cells->size.column - font_pattern_glider2.size.column - 1,
+                              &font_pattern_glider2);
+        }
         break;
     case CP_LWSaceship:
          s_cells_draw_font(cells, DATA, 3, 1, &font_pattern_lwspaceship);

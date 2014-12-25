@@ -9,5 +9,6 @@ typedef struct cell_font {
 
 const CFont font_number[10];
 const CFont font_pattern_glider;
+const CFont font_pattern_glider2;
 const CFont font_pattern_lwspaceship;
 const CFont font_pattern_pentomino;
