@@ -4,6 +4,7 @@
 
 static Window *window;
 static Field *field;
+static FieldSettings field_settings;
 static CPattern pattern;
 static uint16_t generation;
 static bool is_evolution;
@@ -26,7 +27,7 @@ static ActionBar action_bar;
 #define DELAY_ACTIONBAR_HIDE            (3000)
 
 static void s_field_init(CPattern _pattern);
-static void s_menu_select_callback(CPattern _pattern);
+static void s_menu_select_callback(CPattern _pattern, FieldSettings settings);
 static void s_config_provider(void *context);
 
 static void s_timer_cancel(void) {
@@ -43,7 +44,7 @@ static void s_timer_callback(void *data) {
         timer = app_timer_register(DELAY_AUTO_EVO_OTHER, s_timer_callback, NULL);
     } else {
         psleep(DELAY_AUTO_EVO_STOP);
-        s_menu_select_callback(pattern);
+        s_menu_select_callback(pattern, field_settings);
     }
     generation++;
 }
@@ -82,9 +83,9 @@ static void s_field_init(CPattern _pattern) {
     field_set_pattern(field, pattern);
 }
 
-static void s_menu_select_callback(CPattern _pattern) {
-    (void)field_reset_cell_size(field, (rand() % 6) + 2);
-    field_draw_grid(field, rand() % 2);
+static void s_menu_select_callback(CPattern _pattern, FieldSettings settings) {
+    field_settings = settings;
+    (void)field_reset(field, &field_settings);
     
     s_field_init(_pattern);
     if (pattern == CP_Clock) {
@@ -176,7 +177,7 @@ static void s_window_load(Window *window) {
     if (field != NULL) {
         window_set_click_config_provider(window, s_config_provider);
         layer_add_child(window_layer, field_get_layer(field));
-        s_menu_select_callback(CP_Clock);
+        s_menu_select_callback(CP_Clock, (FieldSettings){DEFAULT_CELL_SIZE, DEFAULT_IS_DRAW_GRID});
     }
 }
 

@@ -15,6 +15,24 @@ typedef struct menu {
     MenuSelectCallback callback;
 } Menu;
 
+typedef struct menu_field_settings {
+    enum {
+        CELL_SIZE_RANDOM = 0,
+        CELL_SIZE_2 = CELL_SIZE_MIN,
+        CELL_SIZE_3,
+        CELL_SIZE_4,
+        CELL_SIZE_5,
+        CELL_SIZE_6,
+        CELL_SIZE_7,
+        CELL_SIZE_8,
+    } cell_size;
+    enum {
+        DRAW_GRID_TRUE,
+        DRAW_GRID_FALSE,
+        DRAW_GRID_RANDOM
+    } is_draw_grid;
+} MenuFieldSettings;
+
 static void s_window_load(Window *window);
 static void s_window_unload(Window *window);
 static MenuIndex s_menu_get_index_from_pattern(CPattern pattern);
@@ -131,6 +149,7 @@ static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index,
     Menu *menu = (Menu*)data;
     
     if (cell_index->section != 2) {
+        // pattern
         const CPattern patterns1[NUM_MENU_SECTION1_ROWS] = {
             CP_Clock
         };        
@@ -143,9 +162,47 @@ static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index,
             patterns1,
             patterns2
         };
-        const CPattern pattern = patterns[cell_index->section][cell_index->row];
-    
-        (*menu->callback)(pattern);
+        const CPattern *pattern = &patterns[cell_index->section][cell_index->row];
+
+        // settings
+        const MenuFieldSettings msettings1[NUM_MENU_SECTION1_ROWS] = {
+            {CELL_SIZE_RANDOM, DRAW_GRID_RANDOM}
+        };
+        const MenuFieldSettings msettings2[NUM_MENU_SECTION2_ROWS] = {
+            {CELL_SIZE_RANDOM, DRAW_GRID_RANDOM},
+            {CELL_SIZE_RANDOM, DRAW_GRID_RANDOM},
+            {CELL_SIZE_RANDOM, DRAW_GRID_RANDOM}
+        };
+        const MenuFieldSettings *msettings[NUM_MENU_SECTIONS] = {
+            msettings1,
+            msettings2
+        };
+        MenuFieldSettings msetting = msettings[cell_index->section][cell_index->row];
+        FieldSettings setting;
+        
+        switch (msetting.cell_size) {
+        case CELL_SIZE_RANDOM:
+            setting.cell_size = (rand() % (CELL_SIZE_MAX - CELL_SIZE_MIN)) + CELL_SIZE_MIN;
+            break;
+        default:
+            setting.cell_size = (int)msetting.cell_size;
+            break;
+        }
+        
+        switch (msetting.is_draw_grid) {
+        case DRAW_GRID_TRUE:
+            setting.is_draw_grid = true;
+            break;
+        case DRAW_GRID_FALSE:
+            setting.is_draw_grid = false;
+            break;
+        case DRAW_GRID_RANDOM:
+            setting.is_draw_grid = rand() % 2 == 0 ? true : false;
+            break;
+        }
+
+        (*menu->callback)(*pattern, setting);
+
         menu_destroy(menu);
     } else { // cell_index->section == 2
         

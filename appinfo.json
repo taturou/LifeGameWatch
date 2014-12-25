@@ -9,6 +9,12 @@
     "resources": {
         "media": [
             {
+                "file": "images/app_icon.png",
+                "menuIcon": true,
+                "name": "APP_ICON",
+                "type": "png"
+            },
+            {
                 "file": "images/action_bar_icon_return.png",
                 "name": "ACTION_BAR_ICON_RETURN",
                 "type": "png"
@@ -26,12 +32,6 @@
             {
                 "file": "images/menu_icon_setting.png",
                 "name": "MENU_ICON_SETTING",
-                "type": "png"
-            },
-            {
-                "file": "images/app_icon.png",
-                "menuIcon": true,
-                "name": "APP_ICON",
                 "type": "png"
             },
             {
