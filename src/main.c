@@ -13,6 +13,7 @@ static AppTimer *timer;
 typedef struct {
     ActionBarLayer *layer;
     AppTimer *timer;
+    time_t created_time;
     GBitmap *icons[3];    // 0: Up, 1: Select, 2: Down
 } ActionBar;
 static ActionBar action_bar;
@@ -25,6 +26,7 @@ static ActionBar action_bar;
 #define DELAY_AUTO_EVO_STOP             (1000)
 #define DELAY_MENU                      (500)
 #define DELAY_ACTIONBAR_HIDE            (3000)
+#define DELAY_ACTIONBAR_RECREATE        (1 * 60) // sec (not msec)
 
 static void s_field_init(CPattern _pattern);
 static void s_menu_select_callback(CPattern _pattern, FieldSettings settings);
@@ -112,16 +114,17 @@ static void s_action_bar_timer_callback(void *data) {
 
 static void s_action_bar_create(void) {
     if (action_bar.layer == NULL) {
-        action_bar.layer = action_bar_layer_create();
-        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[0]);
-        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_SELECT, action_bar.icons[1]);
-        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_DOWN, action_bar.icons[2]);
-        action_bar_layer_set_background_color(action_bar.layer, GColorWhite);
-        action_bar_layer_add_to_window(action_bar.layer, window);
-        action_bar_layer_set_click_config_provider(action_bar.layer, s_config_provider);
-        action_bar.timer = app_timer_register(DELAY_ACTIONBAR_HIDE, s_action_bar_timer_callback, NULL);
-    } else {
-        app_timer_reschedule(action_bar.timer, DELAY_ACTIONBAR_HIDE);
+        if (DELAY_ACTIONBAR_RECREATE < (time(NULL) - action_bar.created_time)) {
+            action_bar.layer = action_bar_layer_create();
+            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[0]);
+            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_SELECT, action_bar.icons[1]);
+            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_DOWN, action_bar.icons[2]);
+            action_bar_layer_set_background_color(action_bar.layer, GColorWhite);
+            action_bar_layer_add_to_window(action_bar.layer, window);
+            action_bar_layer_set_click_config_provider(action_bar.layer, s_config_provider);
+            action_bar.timer = app_timer_register(DELAY_ACTIONBAR_HIDE, s_action_bar_timer_callback, NULL);
+            action_bar.created_time = time(NULL);
+        }
     }
 }
 
@@ -167,6 +170,7 @@ static void s_window_load(Window *window) {
     // for action bar
     action_bar.layer = NULL;
     action_bar.timer = NULL;
+    action_bar.created_time = 0;
     action_bar.icons[0] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_START);
     action_bar.icons[1] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_RETURN);
     action_bar.icons[2] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_FORWARD);
