@@ -111,12 +111,12 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
         {"Clock", "The present time", menu->pattern_icons[CP_Clock]}
     };
     const struct basic_cell cells2[NUM_MENU_SECTION2_ROWS] = {
-        {"Glider", "Most popular glider", menu->pattern_icons[CP_Glider]},
-        {"Spaceship", "Heavy, Middle, Light", menu->pattern_icons[CP_Saceship]},
+        {"Glider", "Popular glider", menu->pattern_icons[CP_Glider]},
+        {"Spaceship", "Heavy,Mid,Light", menu->pattern_icons[CP_Saceship]},
         {"R-pentomino", "Not stabilize", menu->pattern_icons[CP_RRntomino]}
     };
     const struct basic_cell cells3[NUM_MENU_SECTION3_ROWS] = {
-        {"Settings", "for size, display", menu->setting_icon}
+        {"Settings", "Not supported yet", menu->setting_icon}
     };
     const struct basic_cell *cells[NUM_MENU_SECTIONS] = {
         cells1,
