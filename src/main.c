@@ -9,12 +9,24 @@ static CPattern pattern;
 static uint16_t generation;
 static bool is_evolution;
 static AppTimer *timer;
+static ButtonId last_clicked;
+
+#define TIMER_TICK_TIMER    ((AppTimer*)&timer)
+
+typedef enum {
+    ABI_RESET = 0,
+    ABI_START,
+    ABI_STOP,
+    ABI_FORWARD
+    // You have to modify 'MAX_ACTIONBAR_ICONS' value.
+} ActionBarIcons;
+#define MAX_ACTIONBAR_ICONS  ((int)ABI_FORWARD + 1)
 
 typedef struct {
     ActionBarLayer *layer;
     AppTimer *timer;
     time_t created_time;
-    GBitmap *icons[3];    // 0: Up, 1: Select, 2: Down
+    GBitmap *icons[MAX_ACTIONBAR_ICONS];
 } ActionBar;
 static ActionBar action_bar;
 
@@ -31,14 +43,6 @@ static ActionBar action_bar;
 static void s_field_init(CPattern _pattern);
 static void s_menu_select_callback(CPattern _pattern, FieldSettings settings);
 static void s_config_provider(void *context);
-
-static void s_timer_cancel(void) {
-    if (timer != NULL) {
-        app_timer_cancel(timer);
-        timer = NULL;
-    }
-    tick_timer_service_unsubscribe();
-}
 
 static void s_timer_callback(void *data) {
     is_evolution = field_evolution(field);
@@ -78,6 +82,32 @@ static void s_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
 }
 
+static void s_timer_start(void) {
+    if (timer == NULL) {
+        if (pattern == CP_Clock) {
+            tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, s_tick_handler);
+            timer = TIMER_TICK_TIMER;
+        } else {
+            timer = app_timer_register(DELAY_AUTO_EVO_START_BY_UP, s_timer_callback, NULL);
+        }
+    }
+}
+
+static void s_timer_stop(void) {
+    if (timer != NULL) {
+        if (pattern == CP_Clock) {
+            tick_timer_service_unsubscribe();
+        } else {
+            app_timer_cancel(timer);
+        }
+        timer = NULL;
+    }
+}
+
+static bool s_is_timer_running(void) {
+    return timer == NULL ? false : true;
+}
+
 static void s_field_init(CPattern _pattern) {
     pattern = _pattern;
     generation = 0;
@@ -90,11 +120,7 @@ static void s_menu_select_callback(CPattern _pattern, FieldSettings settings) {
     (void)field_reset(field, &field_settings);
     
     s_field_init(_pattern);
-    if (pattern == CP_Clock) {
-        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, s_tick_handler);
-    } else {
-        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_MENU, s_timer_callback, NULL);
-    }
+    s_timer_start();
 }
 
 static void s_action_bar_destroy(void) {
@@ -112,46 +138,86 @@ static void s_action_bar_timer_callback(void *data) {
     s_action_bar_destroy();
 }
 
+static void s_action_bar_set_icon(ButtonId button) {
+    switch (button) {
+    case BUTTON_ID_UP:
+        if (s_is_timer_running() == true) {
+            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[ABI_STOP]);
+        } else {
+            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[ABI_START]);
+        }
+        break;
+    case BUTTON_ID_SELECT:
+        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_SELECT, action_bar.icons[ABI_RESET]);
+        break;
+    case BUTTON_ID_DOWN:
+        action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_DOWN, action_bar.icons[ABI_FORWARD]);
+        break;
+    case BUTTON_ID_BACK:
+        // do nothing
+        break;
+    default:
+        // do nothing
+        break;
+    }
+}
+
 static void s_action_bar_create(void) {
     if (action_bar.layer == NULL) {
         if (DELAY_ACTIONBAR_RECREATE < (time(NULL) - action_bar.created_time)) {
             action_bar.layer = action_bar_layer_create();
-            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_UP, action_bar.icons[0]);
-            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_SELECT, action_bar.icons[1]);
-            action_bar_layer_set_icon(action_bar.layer, BUTTON_ID_DOWN, action_bar.icons[2]);
+            s_action_bar_set_icon(BUTTON_ID_UP);
+            s_action_bar_set_icon(BUTTON_ID_SELECT);
+            s_action_bar_set_icon(BUTTON_ID_DOWN);
             action_bar_layer_set_background_color(action_bar.layer, GColorWhite);
             action_bar_layer_add_to_window(action_bar.layer, window);
             action_bar_layer_set_click_config_provider(action_bar.layer, s_config_provider);
             action_bar.timer = app_timer_register(DELAY_ACTIONBAR_HIDE, s_action_bar_timer_callback, NULL);
             action_bar.created_time = time(NULL);
         }
+    } else {
+        app_timer_reschedule(action_bar.timer, DELAY_ACTIONBAR_HIDE);
+        s_action_bar_set_icon(BUTTON_ID_UP);
     }
 }
 
 static void s_up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    s_timer_cancel();
-    if (pattern == CP_Clock) {
-        tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, s_tick_handler);
+    last_clicked = BUTTON_ID_UP;
+
+    if (s_is_timer_running() == true) {
+        s_timer_stop();
     } else {
-        timer = app_timer_register(DELAY_AUTO_EVO_START_BY_UP, s_timer_callback, NULL);
+        s_timer_start();
     }
+    s_action_bar_create();
 }
 
 static void s_select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    s_timer_cancel();
+    last_clicked = BUTTON_ID_SELECT;
+
+    s_timer_stop();
     s_field_init(pattern);
+    s_timer_start();
     s_action_bar_create();
 }
 
 static void s_select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-    s_timer_cancel();
+    last_clicked = BUTTON_ID_SELECT;
+
+    s_timer_stop();
     (void)menu_create(pattern, s_menu_select_callback);
 }
 
 static void s_down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-    s_timer_cancel();
+    ButtonId prev_clicked = last_clicked;
+    last_clicked = BUTTON_ID_DOWN;
+
+    s_timer_stop();
     if (is_evolution == true) {
         is_evolution = field_evolution(field);
+    }
+    if (prev_clicked != BUTTON_ID_DOWN) {
+        s_action_bar_create();
     }
 }
 
@@ -165,16 +231,18 @@ static void s_config_provider(void *context) {
 static void s_window_load(Window *window) {
     pattern = CP_Clock;
     timer = NULL;
+    last_clicked = BUTTON_ID_BACK;
     srand(time(NULL));
-    
+
     // for action bar
     action_bar.layer = NULL;
     action_bar.timer = NULL;
     action_bar.created_time = 0;
-    action_bar.icons[0] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_START);
-    action_bar.icons[1] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_RETURN);
-    action_bar.icons[2] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_FORWARD);
-    
+    action_bar.icons[ABI_RESET]   = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_RESET);
+    action_bar.icons[ABI_START]   = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_START);
+    action_bar.icons[ABI_STOP]    = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_STOP);
+    action_bar.icons[ABI_FORWARD] = gbitmap_create_with_resource(RESOURCE_ID_ACTION_BAR_ICON_FORWARD);
+
     // for field
     Layer *window_layer = window_get_root_layer(window);
     field = field_create(layer_get_frame(window_layer));
@@ -190,9 +258,9 @@ static void s_window_unload(Window *window) {
     field_destroy(field);
     
     // for action bar
-    gbitmap_destroy(action_bar.icons[0]);
-    gbitmap_destroy(action_bar.icons[1]);
-    gbitmap_destroy(action_bar.icons[2]);
+    for (int i = 0; i < MAX_ACTIONBAR_ICONS; i++) {
+        gbitmap_destroy(action_bar.icons[i]);
+    }
 }
 
 static void s_init() {

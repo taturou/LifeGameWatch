@@ -9,14 +9,13 @@
     "resources": {
         "media": [
             {
-                "file": "images/app_icon.png",
-                "menuIcon": true,
-                "name": "APP_ICON",
+                "file": "images/action_bar_icon_stop.png",
+                "name": "ACTION_BAR_ICON_STOP",
                 "type": "png"
             },
             {
-                "file": "images/action_bar_icon_return.png",
-                "name": "ACTION_BAR_ICON_RETURN",
+                "file": "images/action_bar_icon_start.png",
+                "name": "ACTION_BAR_ICON_START",
                 "type": "png"
             },
             {
@@ -25,8 +24,14 @@
                 "type": "png"
             },
             {
-                "file": "images/action_bar_icon_start.png",
-                "name": "ACTION_BAR_ICON_START",
+                "file": "images/action_bar_icon_reset.png",
+                "name": "ACTION_BAR_ICON_RESET",
+                "type": "png"
+            },
+            {
+                "file": "images/app_icon.png",
+                "menuIcon": true,
+                "name": "APP_ICON",
                 "type": "png"
             },
             {
