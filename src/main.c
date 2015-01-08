@@ -40,6 +40,7 @@ static ActionBar action_bar;
 #define DELAY_ACTIONBAR_HIDE            (3000)
 #define DELAY_ACTIONBAR_RECREATE        (1 * 60) // sec (not msec)
 
+static void s_timer_stop(void);
 static void s_field_init(CPattern _pattern);
 static void s_menu_select_callback(CPattern _pattern, FieldSettings settings);
 static void s_config_provider(void *context);
@@ -49,6 +50,7 @@ static void s_timer_callback(void *data) {
     if (is_evolution == true) {
         timer = app_timer_register(DELAY_AUTO_EVO_OTHER, s_timer_callback, NULL);
     } else {
+        s_timer_stop();
         psleep(DELAY_AUTO_EVO_STOP);
         s_menu_select_callback(pattern, field_settings);
     }
@@ -57,7 +59,8 @@ static void s_timer_callback(void *data) {
 
 static void s_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if ((units_changed & MINUTE_UNIT) == MINUTE_UNIT) {
-        s_field_init(CP_Clock);
+        s_timer_stop();
+        s_menu_select_callback(CP_Clock, field_settings);
     } else {
         switch (generation) {
         case 0: // fall down
@@ -117,10 +120,10 @@ static void s_field_init(CPattern _pattern) {
 
 static void s_menu_select_callback(CPattern _pattern, FieldSettings settings) {
     field_settings = settings;
-    (void)field_reset(field, &field_settings);
-    
+    (void)field_reset(field, &field_settings);    
     s_field_init(_pattern);
     s_timer_start();
+    action_bar.created_time = 0;
 }
 
 static void s_action_bar_destroy(void) {

@@ -26,6 +26,8 @@ static void s_cells_draw_font(Cells *cells, int bit, int offset_row, int offset_
 static void s_math_cut_figure2(int num, int figure[2]);
 static void s_cells_rotate(Cells *cells);
 static bool s_cells_is_evolution(const Cells *cells);
+static bool s_true_or_false(void);
+static int s_value_in_range(int min, int max);
 
 Cells *cells_create(CSize size) {
     Cells *cells = NULL;
@@ -62,23 +64,77 @@ void cells_set_pattern(Cells *cells, CPattern pattern) {
     case CP_None:
         break;
     case CP_Clock:
-        s_cells_set_pattern_clock(cells);
-        break;
-    case CP_Glider:
-         s_cells_draw_font(cells, DATA, 1, 1, &font_pattern_glider);
-        if ((font_pattern_glider.size.column * 4) <= cells->size.column) {
-            s_cells_draw_font(cells,
-                              DATA,
-                              rand() % 2 == 0 ? 1 : 2,
-                              cells->size.column - font_pattern_glider2.size.column - 1,
-                              &font_pattern_glider2);
+        {
+            s_cells_set_pattern_clock(cells);
         }
         break;
-    case CP_LWSaceship:
-         s_cells_draw_font(cells, DATA, 3, 1, &font_pattern_lwspaceship);
+    case CP_Glider: 
+        {
+            int min_row, max_row, min_col, max_col;
+
+            s_cells_draw_font(cells, DATA, s_value_in_range(1, 3), s_value_in_range(1, 3), &font_pattern_glider_lt);
+            if ((font_pattern_glider_lt.size.column * 4) <= cells->size.column) {
+                if (s_true_or_false() == true) {
+                    min_row = 1;
+                    max_row = 3;
+                    min_col = cells->size.column - font_pattern_glider_rt.size.column - 3;
+                    max_col = cells->size.column - font_pattern_glider_rt.size.column - 1;
+                    s_cells_draw_font(cells, DATA, s_value_in_range(min_row, max_row), s_value_in_range(min_col, max_col), &font_pattern_glider_rt);
+                }
+
+                if (s_true_or_false() == true) {
+                    min_row = cells->size.row - font_pattern_glider_lb.size.row - 3;
+                    max_row = cells->size.row - font_pattern_glider_lb.size.row - 1;
+                    min_col = 1;
+                    max_col = 3;
+                    s_cells_draw_font(cells, DATA, s_value_in_range(min_row, max_row), s_value_in_range(min_col, max_col), &font_pattern_glider_lb);
+                }
+
+                if (s_true_or_false() == true) {
+                    min_row = cells->size.row - font_pattern_glider_rb.size.row - 3;
+                    max_row = cells->size.row - font_pattern_glider_rb.size.row - 1;
+                    min_col = cells->size.column - font_pattern_glider_rb.size.column - 3;
+                    max_col = cells->size.column - font_pattern_glider_rb.size.column - 1;
+                    s_cells_draw_font(cells, DATA, s_value_in_range(min_row, max_row), s_value_in_range(min_col, max_col), &font_pattern_glider_rb);
+                }
+            }
+        }
+        break;
+    case CP_Saceship:
+        {
+            int row;
+            int min_row, max_row, min_col, max_col;
+            const CFont *spaceship[10];
+
+            row = 3;
+            for (int i = 0; i < 10; i++) {
+                switch (s_value_in_range(0, 2)) {
+                case 0:  spaceship[i] = &font_pattern_spaceship_lw; break;
+                case 1:  spaceship[i] = &font_pattern_spaceship_mw; break;
+                default: spaceship[i] = &font_pattern_spaceship_hw; break;
+                }
+
+                if ((row + spaceship[i]->size.row) < cells->size.row) {
+                    s_cells_draw_font(cells, DATA, row, s_value_in_range(1, 3), spaceship[i]);
+                    row += spaceship[i]->size.row + 3;
+                } else {
+                    break; // for
+                }
+            }
+            
+            if (s_true_or_false() == true) {
+                min_row = 1;
+                max_row = 3;
+                min_col = cells->size.column - font_pattern_glider_rt.size.column - 3;
+                max_col = cells->size.column - font_pattern_glider_rt.size.column - 1;
+                s_cells_draw_font(cells, DATA, s_value_in_range(min_row, max_row), s_value_in_range(min_col, max_col), &font_pattern_glider_rt);
+            }
+        }
         break;
     case CP_RRntomino:
-        s_cells_draw_font(cells, DATA, cells->size.row / 2, cells->size.column / 2, &font_pattern_pentomino);
+        {
+            s_cells_draw_font(cells, DATA, cells->size.row / 2, cells->size.column / 2, &font_pattern_pentomino);
+        }
         break;
     default:
         break;
@@ -227,4 +283,12 @@ static bool s_cells_is_evolution(const Cells *cells) {
         }
     }
     return evolution;
+}
+
+static bool s_true_or_false(void) {
+    return (rand() % 2) == 0 ? true : false;
+}
+
+static int s_value_in_range(int min, int max) {
+    return (int)((rand() % (max - min + 1)) + min);
 }

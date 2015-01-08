@@ -36,7 +36,7 @@ Menu *menu_create(CPattern now_pattern, MenuSelectCallback callback) {
             // create icons
             menu->pattern_icons[CP_Clock] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_CLOCK);
             menu->pattern_icons[CP_Glider] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_GLIDER);
-            menu->pattern_icons[CP_LWSaceship] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_LWSS);
+            menu->pattern_icons[CP_Saceship] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_LWSS);
             menu->pattern_icons[CP_RRntomino] = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_RPENT);
             menu->setting_icon = gbitmap_create_with_resource(RESOURCE_ID_MENU_ICON_SETTING);
 
@@ -66,7 +66,7 @@ void menu_destroy(Menu *menu) {
 
         gbitmap_destroy(menu->pattern_icons[CP_Clock]);
         gbitmap_destroy(menu->pattern_icons[CP_Glider]);
-        gbitmap_destroy(menu->pattern_icons[CP_LWSaceship]);
+        gbitmap_destroy(menu->pattern_icons[CP_Saceship]);
         gbitmap_destroy(menu->pattern_icons[CP_RRntomino]);
         gbitmap_destroy(menu->setting_icon);
     }
@@ -112,7 +112,7 @@ static void s_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
     };
     const struct basic_cell cells2[NUM_MENU_SECTION2_ROWS] = {
         {"Glider", "Most popular glider", menu->pattern_icons[CP_Glider]},
-        {"Spaceship", "Lightweight spaceship", menu->pattern_icons[CP_LWSaceship]},
+        {"Spaceship", "Heavy, Middle, Light", menu->pattern_icons[CP_Saceship]},
         {"R-pentomino", "Not stabilize", menu->pattern_icons[CP_RRntomino]}
     };
     const struct basic_cell cells3[NUM_MENU_SECTION3_ROWS] = {
@@ -137,7 +137,7 @@ static void s_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index,
         };        
         const CPattern patterns2[NUM_MENU_SECTION2_ROWS] = {
             CP_Glider,
-            CP_LWSaceship,
+            CP_Saceship,
             CP_RRntomino 
         };
         const CPattern *patterns[NUM_MENU_SECTIONS] = {

@@ -116,34 +116,79 @@ const CFont font_number[10] = {
     {{7, 3}, font_number_data[9]}
 };
 
-const uint8_t font_pattern_glider_data[3 * 3] = {
+const uint8_t font_pattern_glider_lt_data[3 * 3] = {
     0,1,0,
     0,0,1,
     1,1,1
 };
 
-const CFont font_pattern_glider = {
-    {3, 3}, font_pattern_glider_data
+const CFont font_pattern_glider_lt = {
+    {3, 3}, font_pattern_glider_lt_data
 };
 
-const uint8_t font_pattern_glider2_data[3 * 3] = {
+const uint8_t font_pattern_glider_rt_data[3 * 3] = {
     0,1,0,
     1,0,0,
     1,1,1
 };
 
-const CFont font_pattern_glider2 = {
-    {3, 3}, font_pattern_glider2_data
+const CFont font_pattern_glider_rt = {
+    {3, 3}, font_pattern_glider_rt_data
 };
-const uint8_t font_pattern_lwspaceship_data[4 * 5] = {
+
+const uint8_t font_pattern_glider_lb_data[3 * 3] = {
+    1,1,1,
+    0,0,1,
+    0,1,0
+};
+
+const CFont font_pattern_glider_lb = {
+    {3, 3}, font_pattern_glider_lb_data
+};
+
+const uint8_t font_pattern_glider_rb_data[3 * 3] = {
+    1,1,1,
+    1,0,0,
+    0,1,0
+};
+
+const CFont font_pattern_glider_rb = {
+    {3, 3}, font_pattern_glider_rb_data
+};
+
+const uint8_t font_pattern_spaceship_lw_data[4 * 5] = {
     1,0,0,1,0,
     0,0,0,0,1,
     1,0,0,0,1,
     0,1,1,1,1
 };
 
-const CFont font_pattern_lwspaceship = {
-    {4, 5}, font_pattern_lwspaceship_data
+const CFont font_pattern_spaceship_lw = {
+    {4, 5}, font_pattern_spaceship_lw_data
+};
+
+const uint8_t font_pattern_spaceship_mw_data[5 * 6] = {
+    0,0,1,0,0,0,
+    1,0,0,0,1,0,
+    0,0,0,0,0,1,
+    1,0,0,0,0,1,
+    0,1,1,1,1,1
+};
+
+const CFont font_pattern_spaceship_mw = {
+    {5, 6}, font_pattern_spaceship_mw_data
+};
+
+const uint8_t font_pattern_spaceship_hw_data[5 * 7] = {
+    0,0,1,1,0,0,0,
+    1,0,0,0,0,1,0,
+    0,0,0,0,0,0,1,
+    1,0,0,0,0,0,1,
+    0,1,1,1,1,1,1
+};
+
+const CFont font_pattern_spaceship_hw = {
+    {5, 7}, font_pattern_spaceship_hw_data
 };
 
 const uint8_t font_pattern_pentomino_data[3 * 3] = {

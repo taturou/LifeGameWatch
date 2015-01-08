@@ -11,7 +11,7 @@ typedef enum cells_pattern {
     CP_None = 0,    // as clear
     CP_Clock,
     CP_Glider,
-    CP_LWSaceship,  // Lightweight spaceship
+    CP_Saceship,    // Spaceship
     CP_RRntomino    // R-pentomino
     // You have to modify 'MAX_CPATTERN' value.
 } CPattern;
